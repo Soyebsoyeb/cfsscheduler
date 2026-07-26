@@ -1,0 +1,23 @@
+# Build directory - compiled output
+build/
+
+# IDE configuration - Visual Studio Code
+.vscode/
+
+# Generated output files
+process_schedule.csv      # Schedule timeline data
+monitoring_data.csv       # Real-time monitoring data
+scheduler.log            # Log file
+stats.json               # Statistics output
+
+# Object files and executables
+*.o
+*.exe
+
+# macOS system files
+.DS_Store
+
+# Python virtual environment
+myenv/
+__pycache__/
+*.pyc

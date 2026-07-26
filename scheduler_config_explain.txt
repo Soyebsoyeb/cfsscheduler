@@ -1,0 +1,25 @@
+{
+    "scheduler": {
+        "time_slice_ms": 2,           // CPU time slice in milliseconds
+        "io_wait_ms": 10,             // Simulated I/O wait time in milliseconds
+        "nice_0_load": 1024,          // Standard Linux nice 0 weight
+        "preemptive": true,           // Enable preemption
+        "min_granularity_ms": 1       // Minimum scheduling granularity
+    },
+    "monitoring": {
+        "enabled": true,              // Enable/disable monitoring
+        "update_interval_ms": 100,    // How often to collect monitoring data
+        "port": 8080,                 // Port for web dashboard (future use)
+        "max_history": 1000,          // Maximum historical data points to keep
+        "websocket_enabled": true     // Enable WebSocket for live updates
+    },
+    "logging": {
+        "enabled": true,              // Enable/disable logging
+        "level": "INFO",              // Log level: DEBUG, INFO, WARNING, ERROR
+        "output_file": "scheduler.log" // Log file path
+    },
+    "statistics": {
+        "enabled": true,              // Enable/disable statistics collection
+        "output_file": "stats.json"   // Statistics output file
+    }
+}

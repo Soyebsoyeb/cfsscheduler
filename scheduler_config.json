@@ -1,0 +1,25 @@
+{
+  "scheduler": {
+    "time_slice_ms": 2,
+    "io_wait_ms": 10,
+    "nice_0_load": 1024,
+    "preemptive": true,
+    "min_granularity_ms": 1
+  },
+  "monitoring": {
+    "enabled": true,
+    "update_interval_ms": 100,
+    "port": 8080,
+    "max_history": 1000,
+    "websocket_enabled": true
+  },
+  "logging": {
+    "enabled": true,
+    "level": "INFO",
+    "output_file": "scheduler.log"
+  },
+  "statistics": {
+    "enabled": true,
+    "output_file": "stats.json"
+  }
+}
