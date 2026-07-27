@@ -70,6 +70,7 @@ void handleIoBoundProcess(Process* process, int ioWaitTime, QueueService& queue)
     else {
         // Process has completed all its work
         process->state.state = COMPLETED;
+        process->deleted = true;
         Logger::info("Process " + std::to_string(process->pid) + " completed");
     }
 }

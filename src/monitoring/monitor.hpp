@@ -9,19 +9,22 @@
 #include <functional>  // For callbacks
 
 #include "../core/processService.hpp"
+#include "../config/config.hpp"  // For MonitorConfig
+
+// Forward declaration to avoid circular include
+class cfs;
 
 /* MonitorData - Data structure for monitoring updates
- 
- *  Contains all information needed for real-time visualization:
-  - Current state
-  - Queue information
-  - Statistics
-  - Per-process data
+ * 
+ * Contains all information needed for real-time visualization:
+ * - Current state
+ * - Queue information
+ * - Statistics
+ * - Per-process data
  */
-
- struct MonitorData {
+struct MonitorData {
     long long timestamp;                          // When data was collected
-    int currentProcess;                           
+    int currentProcess;                           // Currently running process
     size_t queueSize;                             // Number of processes waiting
     std::vector<Process*> processes;              // All processes in queue
     long long contextSwitches;                    // Total context switches
@@ -29,67 +32,40 @@
     std::map<int, long long> processCpuTime;      // CPU time per process
 };
 
-
-//  MonitorConfig - Configuration for the monitor
-
-struct MonitorConfig {
-    bool enabled = true;          // Enable/disable monitoring
-    int updateIntervalMs = 100;   // Update interval in milliseconds
-    int port = 8080;              // Port for web dashboard
-    int maxHistory = 1000;        // Maximum historical data points
-    bool websocketEnabled = true; // Enable WebSocket support
-};
-
-/*  Monitor - Real-time monitoring system
-  
-
+/* Monitor - Real-time monitoring system
+ * 
  * Features:
-   - Collects data from scheduler periodically
-   - Broadcasts to registered callbacks
-   - Maintains history for analysis
-   - Thread-safe implementation
-   
-*/
-
-
+ * - Collects data from scheduler periodically
+ * - Broadcasts to registered callbacks
+ * - Maintains history for analysis
+ * - Thread-safe implementation
+ */
 class Monitor {
 private:
-    MonitorConfig config;                        // Configuration
-    std::atomic<bool> running{false};            // Running flag
-    std::thread monitorThread;                   // Background thread
-    mutable std::mutex dataMutex;                // Mutex for data protection
-    MonitorData currentData;                     // Current data
-    std::vector<MonitorData> history;            // Historical data
-    
-    // Callbacks for data updates
-    std::vector<std::function<void(const MonitorData&)>> callbacks;
-    
+    MonitorConfig config;                         // Configuration
+    std::atomic<bool> running{false};             // Running flag
+    std::thread monitorThread;                    // Background thread
+    mutable std::mutex dataMutex;                 // Mutex for data protection
+    MonitorData currentData;                      // Current data
+    std::vector<MonitorData> history;             // Historical data
+    std::vector<std::function<void(const MonitorData&)>> callbacks; // Callbacks
 
     void broadcastData(const MonitorData& data);
 
 public:
-
-
     Monitor(const MonitorConfig& cfg = MonitorConfig());
-    
     ~Monitor();
-    
-    void start(class Scheduler& scheduler);
 
+    // Changed from Scheduler& to cfs&
+    void start(cfs& scheduler);
     void stop();
-    
 
     void update(const MonitorData& data);
-    
     void registerCallback(std::function<void(const MonitorData&)> callback);
-    
-    MonitorData getCurrentData() const;
-    
 
+    MonitorData getCurrentData() const;
     std::vector<MonitorData> getHistory() const;
-    
-    
     void saveToFile(const std::string& filename);
 };
 
-#endif
+#endif // MONITOR_HPP

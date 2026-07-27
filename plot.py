@@ -1,6 +1,9 @@
+#!/usr/bin/env python3
+# plot.py - Visualize the process schedule timeline
+# Uses pandas for data reading and matplotlib for plotting
+
 import pandas as pd
 import matplotlib.pyplot as plt
-
 
 # Set dark theme for better visibility
 plt.style.use('dark_background')
@@ -17,22 +20,18 @@ high_contrast_colors = [
     '#ff00ff', '#ffa500', '#7fff00', '#ff69b4'
 ]
 
-
 # Plot each process execution as a horizontal bar
 # Each row in CSV represents one execution episode
-
-for _,row  in df.iterrows():
+for _, row in df.iterrows():
     ax.hlines(
-        y = row['pid'],
-        xmin = row['start_time'],
-        xmax= row['start_time'],
-        linewidth=10,
+        y=row['pid'],                    # Y position = process ID
+        xmin=row['start_time'],          # Bar start = start time
+        xmax=row['end_time'],            # Bar end = end time
+        linewidth=10,                    # Thickness of the bar
         color=high_contrast_colors[row['pid'] % len(high_contrast_colors)]
     )
 
-
-
-# Customize Plot appearance
+# Customize plot appearance
 ax.set_title('Process Schedule Timeline', color='white', fontsize=14, pad=20)
 ax.set_xlabel('Time (nanoseconds)', color='white', fontsize=12)
 ax.set_ylabel('Process ID', color='white', fontsize=12)
@@ -40,16 +39,12 @@ ax.set_ylabel('Process ID', color='white', fontsize=12)
 # Add grid for readability
 ax.grid(True, axis='x', linestyle='--', alpha=0.4, color='#a0a0a0')
 
-
 # Configure y-axis to show process IDs
 unique_pids = df['pid'].unique()
 ax.set_yticks(unique_pids)
 ax.tick_params(axis='both', colors='white')
 
-
 # Save the plot
 plt.tight_layout()
 plt.savefig('process_schedule_dark.png', facecolor=fig.get_facecolor(), dpi=300)
 print("Visualization saved to process_schedule_dark.png")
-
-

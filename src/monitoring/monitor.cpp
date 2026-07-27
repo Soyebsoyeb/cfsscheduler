@@ -1,9 +1,9 @@
 #include "monitor.hpp"
+#include "../scheduling/cfs.hpp"  
 #include "../utils/logger.hpp"
 #include <fstream>
 #include <chrono>
 #include <thread>
-
 
 Monitor::Monitor(const MonitorConfig& cfg) : config(cfg) {
     Logger::info("Monitor initialized");
@@ -14,7 +14,9 @@ Monitor::~Monitor() {
 }
 
 
-void Monitor::start(Scheduler& scheduler) {
+void Monitor::start(cfs& scheduler) {
+    (void)scheduler;  // Suppress unused parameter warning
+    
     if (running) return;  // Already running
     
     running = true;
@@ -24,7 +26,6 @@ void Monitor::start(Scheduler& scheduler) {
         Logger::info("Monitor thread started");
         
         while (running) {
-
             // Sleep for the configured interval
             std::this_thread::sleep_for(
                 std::chrono::milliseconds(config.updateIntervalMs));
@@ -37,7 +38,7 @@ void Monitor::start(Scheduler& scheduler) {
             
             // Save to history
             history.push_back(currentData);
-            if (history.size() > config.maxHistory) {
+            if (history.size() > static_cast<size_t>(config.maxHistory)) {
                 history.erase(history.begin());
             }
         }
@@ -45,7 +46,6 @@ void Monitor::start(Scheduler& scheduler) {
     
     Logger::info("Monitoring started");
 }
-
 
 void Monitor::stop() {
     if (!running) return;
@@ -58,13 +58,10 @@ void Monitor::stop() {
     Logger::info("Monitoring stopped");
 }
 
-
 void Monitor::update(const MonitorData& data) {
     std::lock_guard<std::mutex> lock(dataMutex);
     currentData = data;
 }
-
-
 
 void Monitor::broadcastData(const MonitorData& data) {
     for (const auto& callback : callbacks) {
@@ -76,26 +73,20 @@ void Monitor::broadcastData(const MonitorData& data) {
     }
 }
 
-
-
 void Monitor::registerCallback(std::function<void(const MonitorData&)> callback) {
     callbacks.push_back(callback);
     Logger::info("New monitoring callback registered");
 }
-
-
 
 MonitorData Monitor::getCurrentData() const {
     std::lock_guard<std::mutex> lock(dataMutex);
     return currentData;
 }
 
-
 std::vector<MonitorData> Monitor::getHistory() const {
     std::lock_guard<std::mutex> lock(dataMutex);
     return history;
 }
-
 
 void Monitor::saveToFile(const std::string& filename) {
     std::lock_guard<std::mutex> lock(dataMutex);

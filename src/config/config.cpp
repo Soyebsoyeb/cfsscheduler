@@ -2,7 +2,6 @@
 #include <fstream>
 #include <iostream>
 
-
 Config::Config(const std::string& filename) {
     load(filename);
 }
@@ -12,8 +11,6 @@ bool Config::load(const std::string& filename) {
     loadFromFile(filename);
     return loaded;
 }
-
-
 
 void Config::loadFromFile(const std::string& filename) {
     try {
@@ -49,12 +46,14 @@ void Config::loadFromFile(const std::string& filename) {
             monitoring.websocketEnabled = monitor.value("websocket_enabled", true);
         }
         
-        // Parse logging configuration
+        // Parse logging configuration - FIXED!
         if (configJson.contains("logging")) {
-            auto& logging = configJson["logging"];
-            logging.enabled = logging.value("enabled", true);
-            logging.level = logging.value("level", "INFO");
-            logging.outputFile = logging.value("output_file", "scheduler.log");
+            auto& logJson = configJson["logging"];  // ← Renamed from 'logging' to 'logJson'
+            
+            // Now 'logging' refers to the struct member
+            logging.enabled = logJson.value("enabled", true);
+            logging.level = logJson.value("level", "INFO");
+            logging.outputFile = logJson.value("output_file", "scheduler.log");
             
             // Update the logger with these settings
             Logger::setLevel(logging.level);
@@ -76,7 +75,6 @@ void Config::loadFromFile(const std::string& filename) {
         loaded = false;
     }
 }
-
 
 bool Config::save(const std::string& filename) const {
     try {
@@ -121,7 +119,6 @@ bool Config::save(const std::string& filename) const {
         return false;
     }
 }
-
 
 void Config::print() const {
     std::cout << "\n=== Configuration ===" << std::endl;

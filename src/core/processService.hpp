@@ -31,8 +31,8 @@ using json = nlohmann::json;
 
 
  enum PROCESS_NATURE {
-    CPU_BOUND;
-    IO_BOUND;
+    CPU_BOUND,
+    IO_BOUND
  };
 
 
@@ -50,7 +50,7 @@ using json = nlohmann::json;
  enum ProcessState {
     READY,
     RUNNING,
-    BLOCKED_ID,
+    BLOCKED_IO,
     COMPLETED,
     WAITING
  };
@@ -68,7 +68,7 @@ using json = nlohmann::json;
  struct ProcessStateData {
     long long counter = 0;               // Generic counter
     ProcessState state = READY;          // Current State
-    long long lastChange = 0;
+    long long lastStateChange = 0;
  }; 
 
 
@@ -104,6 +104,7 @@ struct Process {
     int priority;                 // Priority (1 = highest)
     ProcessStateData state;       // Current state
     PROCESS_NATURE processNature; // CPU or I/O bound
+    bool deleted = false; 
     
     // Statistics for monitoring
     long long totalCpuTime = 0;       // Total CPU time used

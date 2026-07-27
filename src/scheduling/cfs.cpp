@@ -4,20 +4,16 @@
 #include <chrono>
 #include <thread>
 
-
-
 cfs::cfs(const Config& cfg) : config(cfg) {
     stats.startTime = getCurrentTimeMs();
     Logger::info("CFS Scheduler initialized");
 }
 
-
-
 cfs::~cfs() {
-    // Clean up remaining processes in queue
+    // IMPORTANT: Processes are already deleted when they complete.
+    // The queue should be empty, but just in case, clear it without deleting.
     while (!queue.empty()) {
-        delete queue.top();
-        queue.pop();
+        queue.pop();  // Just pop, don't delete
     }
     
     // Clean up execution logs
@@ -28,10 +24,7 @@ cfs::~cfs() {
     Logger::info("CFS Scheduler destroyed");
 }
 
-
-
-//Main scheduling loop
- 
+// Main scheduling loop
 std::vector<ProcessLog*> cfs::schedule(
     std::vector<Process*> processList, 
     Monitor* monitor) {
@@ -40,24 +33,19 @@ std::vector<ProcessLog*> cfs::schedule(
     activeMonitor = monitor;
     running = true;
   
-    
     // Step 1: Add all processes to the runqueue
     for (auto process : processList) {
         process->arrivalTime = getCurrentTimeMs();
         process->state.state = READY;
+        process->deleted = false;
         queue.push(process);
     }
     
-
     Logger::info("Starting CFS scheduling with " + 
                  std::to_string(processList.size()) + " processes");
     
-    
     // Step 2: Main scheduling loop
-    // Continues until queue empty or stop() called
-
     while (!queue.empty() && running) {
-
         // Step 2a: Pick process with smallest vruntime
         currentProcess = queue.top();
         queue.pop();
@@ -67,38 +55,28 @@ std::vector<ProcessLog*> cfs::schedule(
         currentProcess->state.lastStateChange = getCurrentTimeMs();
         currentProcess->lastScheduled = getCurrentTimeMs();
         
-        
         // Record start time
-        auto startTime = std::chrono::steady_clock::now();
         long long startTimeMs = getCurrentTimeMs();
         
-
         // Step 2b: Execute based on process type
         if (currentProcess->processNature == PROCESS_NATURE::CPU_BOUND) {
-            // CPU-bound: execute for the configured time slice
             executeCpuBoundProcess(currentProcess, config.scheduler.timeSliceMs, queue);
         } else {
-            // I/O-bound: simulate I/O wait + execute
             handleIoBoundProcess(currentProcess, config.scheduler.ioWaitMs, queue);
         }
         
-
         // Record end time
-        auto endTime = std::chrono::steady_clock::now();
         long long endTimeMs = getCurrentTimeMs();
         long long cpuTime = endTimeMs - startTimeMs;
-       
         
         // Step 2c: Update statistics
         stats.contextSwitches++;
         stats.totalCpuTime += cpuTime;
         stats.processCpuTime[currentProcess->pid] += cpuTime;
         
-
         // Step 2d: Log execution
         createProcessLog(startTimeMs, endTimeMs, currentProcess->pid);
         
-
         // Step 2e: Send monitoring update (if configured)
         if (activeMonitor && (endTimeMs - lastUpdateTime > 
                               config.monitoring.updateIntervalMs)) {
@@ -106,7 +84,6 @@ std::vector<ProcessLog*> cfs::schedule(
             lastUpdateTime = endTimeMs;
         }
         
-
         // Step 2f: Update process state
         if (currentProcess->state.state != COMPLETED) {
             currentProcess->state.state = READY;
@@ -120,9 +97,7 @@ std::vector<ProcessLog*> cfs::schedule(
     return logs;
 }
 
-
-//Create a process execution log
-
+// Create a process execution log
 void cfs::createProcessLog(long long startTime, long long endTime, int pid) {
     ProcessLog* log = new ProcessLog();
     log->pid = pid;
@@ -131,13 +106,10 @@ void cfs::createProcessLog(long long startTime, long long endTime, int pid) {
     logs.push_back(log);
 }
 
-
-//Send monitoring update to monitor system
-
+// Send monitoring update to monitor system
 void cfs::sendMonitoringUpdate() {
     if (!activeMonitor) return;
     
-    // Prepare monitoring data
     MonitorData data;
     data.timestamp = getCurrentTimeMs();
     data.currentProcess = currentProcess ? currentProcess->pid : -1;
@@ -145,8 +117,6 @@ void cfs::sendMonitoringUpdate() {
     data.contextSwitches = stats.contextSwitches.load();
     data.totalCpuTime = stats.totalCpuTime.load();
     
-    // Get all processes currently in the queue
-    // We need to temporarily pop them to access them
     std::vector<Process*> tempQueue;
     while (!queue.empty()) {
         Process* p = queue.top();
@@ -155,23 +125,18 @@ void cfs::sendMonitoringUpdate() {
         tempQueue.push_back(p);
     }
     
-    // Restore the queue
     for (auto p : tempQueue) {
         queue.push(p);
     }
     
-    // Add per-process statistics
-    for (const auto& [pid, time] : stats.processCpuTime) {
-        data.processCpuTime[pid] = time;
+    for (const auto& pair : stats.processCpuTime) {
+        data.processCpuTime[pair.first] = pair.second;
     }
     
-    // Send to monitor
     activeMonitor->update(data);
 }
 
-
 // Print scheduler statistics to console
-
 void cfs::printStatistics() const {
     std::cout << "\n  CFS Scheduler Statistics " << std::endl;
     std::cout << "Total Context Switches: " << stats.contextSwitches.load() << std::endl;
@@ -181,12 +146,11 @@ void cfs::printStatistics() const {
     
     if (!stats.processCpuTime.empty()) {
         std::cout << "\nPer-Process Statistics:" << std::endl;
-        for (const auto& [pid, time] : stats.processCpuTime) {
-            std::cout << "  Process " << pid << ": " << time << "ms CPU" << std::endl;
+        for (const auto& pair : stats.processCpuTime) {
+            std::cout << "  Process " << pair.first << ": " << pair.second << "ms CPU" << std::endl;
         }
     }
 }
-
 
 long long cfs::getCurrentTimeMs() {
     return Timer::currentTimeMs();

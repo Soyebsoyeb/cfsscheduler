@@ -40,6 +40,7 @@ std::vector<Process*> getProcessesFromJSON(const std::string& filePath) {
         process->vruntime = item["vruntime"].get<long long>();
         process->cpu_burst_time = item["cpu_burst_time"].get<int>();
         process->priority = item["priority"].get<int>();
+        process->deleted = false; 
         process->processNature = stringToProcessNature(
             item["processNature"].get<std::string>()
         );
