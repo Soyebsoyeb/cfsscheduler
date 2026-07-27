@@ -56,7 +56,9 @@ void executeCpuBoundProcess(Process* process, int timeSlice, QueueService& queue
 
         // Process has completed all its work
         process->state.state = COMPLETED;
-        process->deleted = true;
+
         Logger::info("Process " + std::to_string(process->pid) + " completed");
+
+        delete process;
     }
 }

@@ -104,7 +104,7 @@ struct Process {
     int priority;                 // Priority (1 = highest)
     ProcessStateData state;       // Current state
     PROCESS_NATURE processNature; // CPU or I/O bound
-    bool deleted = false; 
+   
     
     // Statistics for monitoring
     long long totalCpuTime = 0;       // Total CPU time used
